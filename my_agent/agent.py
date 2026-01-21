@@ -57,7 +57,7 @@ with local_postgres_mcp:
                logger.info(f"\nUser: {user_input}")
                logger.info(f"Agent thinking: {''.join(text_buffer)}\n")
             
-            print(f"\n{response.message}\n")
+            print(f"\n{response.message['content'][0]['text']}\n")
             
       except KeyboardInterrupt:
             print("\n\nInterrupted. Exiting...")
