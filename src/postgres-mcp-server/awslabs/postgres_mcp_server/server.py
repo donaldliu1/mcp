@@ -277,6 +277,7 @@ def connect_to_database(
     db_endpoint: Annotated[str, Field(description='database endpoint')],
     port: Annotated[int, Field(description='Postgres port')],
     database: Annotated[str, Field(description='database name')],
+    secret_arn: Annotated[Optional[str], Field(description='secret_arn')] = None,
 ) -> str:
     """Connect to a specific database save the connection internally.
 
@@ -293,6 +294,7 @@ def connect_to_database(
         1. Aurora Postgres database with RDS_API + Credential Manager:
             cluster_identifier must be set
             db_endpoint and port will be ignored
+            secret_arn can be set, if not, default to masteruser
         2. Aurora Postgres database with direct connection + IAM:
             cluster_identifier must be set
             db_endpoint must be set
@@ -312,6 +314,7 @@ def connect_to_database(
             db_endpoint=db_endpoint,
             port=port,
             database=database,
+            secret_arn=secret_arn,
         )
 
         return str(llm_response)
@@ -523,6 +526,7 @@ def internal_connect_to_database(
     db_endpoint: Annotated[str, Field(description='database endpoint')],
     port: Annotated[int, Field(description='Postgres port')],
     database: Annotated[str, Field(description='database name')] = 'postgres',
+    secret_arn: Annotated[Optional[str], Field(description='secret_arn')] = None,
 ) -> Tuple:
     """Connect to a specific database save the connection internally.
 
@@ -534,6 +538,7 @@ def internal_connect_to_database(
         db_endpoint: database endpoint
         port: database port
         database: database name
+        secret_arn: secret arn
     """
     global db_connection_map
     global readonly_query
@@ -572,6 +577,7 @@ def internal_connect_to_database(
                 'db_endpoint': db_endpoint,
                 'database': database,
                 'port': port,
+                'secret_arn': secret_arn,
             },
             indent=2,
             default=str,
@@ -581,7 +587,6 @@ def internal_connect_to_database(
     enable_data_api: bool = False
     masteruser: str = ''
     cluster_arn: str = ''
-    secret_arn: str = ''
 
     if cluster_identifier:
         # Can be either APG (APG always requires cluster) or RPG multi-AZ cluster deployment case
@@ -592,18 +597,22 @@ def internal_connect_to_database(
         enable_data_api = cluster_properties.get('HttpEndpointEnabled', False)
         masteruser = cluster_properties.get('MasterUsername', '')
         cluster_arn = cluster_properties.get('DBClusterArn', '')
-        secret_arn = cluster_properties.get('MasterUserSecret', {}).get('SecretArn')
 
         if not db_endpoint:
             # if db_endpoint not set, we will use cluster's endpoint
             db_endpoint = cluster_properties.get('Endpoint', '')
             port = int(cluster_properties.get('Port', ''))
+
+        if not secret_arn:
+            secret_arn = cluster_properties.get('MasterUserSecret', {}).get('SecretArn')
     else:
         # Must be RPG instance only deployment case (i.e. without cluster)
         instance_properties = internal_get_instance_properties(db_endpoint, region)
         masteruser = instance_properties.get('MasterUsername', '')
-        secret_arn = instance_properties.get('MasterUserSecret', {}).get('SecretArn')
         port = int(instance_properties.get('Endpoint', {}).get('Port'))
+
+        if not secret_arn:
+            secret_arn = instance_properties.get('MasterUserSecret', {}).get('SecretArn')
 
     logger.info(
         f'About to create internal DB connections with:'
@@ -662,6 +671,7 @@ def internal_connect_to_database(
                 'db_endpoint': db_endpoint,
                 'database': database,
                 'port': port,
+                'secret_arn': secret_arn,
             },
             indent=2,
             default=str,
