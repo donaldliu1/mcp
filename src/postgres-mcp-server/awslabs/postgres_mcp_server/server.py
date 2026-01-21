@@ -277,7 +277,7 @@ def connect_to_database(
     db_endpoint: Annotated[str, Field(description='database endpoint')],
     port: Annotated[int, Field(description='Postgres port')],
     database: Annotated[str, Field(description='database name')],
-    secret_arn: Annotated[Optional[str], Field(description='secret_arn')] = None,
+    secret_arn: Annotated[str, Field(description='secret_arn')],
 ) -> str:
     """Connect to a specific database save the connection internally.
 
@@ -526,7 +526,7 @@ def internal_connect_to_database(
     db_endpoint: Annotated[str, Field(description='database endpoint')],
     port: Annotated[int, Field(description='Postgres port')],
     database: Annotated[str, Field(description='database name')] = 'postgres',
-    secret_arn: Annotated[Optional[str], Field(description='secret_arn')] = None,
+    secret_arn: Annotated[Optional[str], Field(description='secret_arn')] = 'None',
 ) -> Tuple:
     """Connect to a specific database save the connection internally.
 
@@ -603,16 +603,11 @@ def internal_connect_to_database(
             db_endpoint = cluster_properties.get('Endpoint', '')
             port = int(cluster_properties.get('Port', ''))
 
-        if not secret_arn:
-            secret_arn = cluster_properties.get('MasterUserSecret', {}).get('SecretArn')
     else:
         # Must be RPG instance only deployment case (i.e. without cluster)
         instance_properties = internal_get_instance_properties(db_endpoint, region)
         masteruser = instance_properties.get('MasterUsername', '')
         port = int(instance_properties.get('Endpoint', {}).get('Port'))
-
-        if not secret_arn:
-            secret_arn = instance_properties.get('MasterUserSecret', {}).get('SecretArn')
 
     logger.info(
         f'About to create internal DB connections with:'
