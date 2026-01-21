@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "local.postgres-mcp-server": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "awslabs.postgres_mcp_server.server",
+        "--allow_write_query"
+      ],
+      "cwd": "../src/postgres-mcp-server",
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "us-east-1",
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "PYTHONPATH": "../src/postgres-mcp-server"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
