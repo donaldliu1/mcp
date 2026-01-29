@@ -40,6 +40,7 @@ local_postgres_mcp = MCPClient(
 
 with local_postgres_mcp:
    mcp_agent = Agent(tools=local_postgres_mcp.list_tools_sync(), callback_handler=callback_handler)
+   print("patched local postgres MCP tools loaded")
    while True:
       try:
             user_input = input("").strip()
