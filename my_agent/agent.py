@@ -43,7 +43,7 @@ with local_postgres_mcp:
    print("patched local postgres MCP tools loaded")
    while True:
       try:
-            user_input = input("").strip()
+            user_input = input("> ").strip()
             
             if user_input.lower() == 'exit':
                print("Exiting...")
@@ -66,3 +66,4 @@ with local_postgres_mcp:
       except Exception as e:
             print(f"Error: {e}")
             continue
+# TODO: get user input then run loop and print end result, thinking goes into logging
