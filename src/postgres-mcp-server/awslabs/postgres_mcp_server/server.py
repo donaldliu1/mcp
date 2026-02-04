@@ -55,7 +55,7 @@ write_query_prohibited_key = 'Your MCP tool only allows readonly query. If you w
 query_comment_prohibited_key = 'The comment in query is prohibited because of injection risk'
 query_injection_risk_key = 'Your query contains risky injection patterns'
 readonly_query = True
-
+logger.add('/tmp/postgres_mcp.log', rotation= '10 MB')
 
 class DummyCtx:
     """A dummy context class for error handling in MCP tools."""
@@ -106,6 +106,10 @@ mcp = FastMCP(
     ],
 )
 
+@mcp.tool(name='version', description='Verify this is the patched Amazon Aurora Postgres MCP Server hosted on Docker')
+def verify() -> str:
+    """Verify Amazon Aurora Postgres MCP Server is running and hosted on Docker."""
+    return "This is the patched version of Amazon Aurora Postgres MCP Server hosted on Docker"
 
 @mcp.tool(name='run_query', description='Run a SQL query against PostgreSQL')
 async def run_query(
@@ -472,6 +476,7 @@ def create_cluster_worker(
     cluster_identifier: str,
     engine_version: str,
     database: str,
+    secret_arn: str,
 ):
     """Background worker to create a cluster asynchronously."""
     global db_connection_map
@@ -501,6 +506,7 @@ def create_cluster_worker(
             db_endpoint=cluster_result['Endpoint'],
             port=5432,
             database=database,
+            secret_arn=secret_arn,
         )
 
         try:
@@ -525,8 +531,8 @@ def internal_connect_to_database(
     cluster_identifier: Annotated[str, Field(description='cluster identifier')],
     db_endpoint: Annotated[str, Field(description='database endpoint')],
     port: Annotated[int, Field(description='Postgres port')],
+    secret_arn: Annotated[str, Field(description='secret_arn')],
     database: Annotated[str, Field(description='database name')] = 'postgres',
-    secret_arn: Annotated[Optional[str], Field(description='secret_arn')] = 'None',
 ) -> Tuple:
     """Connect to a specific database save the connection internally.
 
@@ -731,6 +737,7 @@ def main():
                 db_endpoint=args.hostname,
                 port=args.port,
                 database=args.database,
+                secret_arn=args.secret_arn
             )
 
             # Test database connection
